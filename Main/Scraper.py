@@ -22,13 +22,13 @@ class Scraper:
         time.sleep(1)
         accept_cookies_button.click()
 
-    def get_navigation_bar(self, class_name: str= 'navs'):
-        nav_bar = self.driver.find_element(By.CLASS_NAME,class_name)
-        nav_bar_list = nav_bar.find_elements(By.XPATH,'.//li')
-        print(len(nav_bar_list))
+    def get_navigation_bar(self, data_content):
+        nav_bar = self.driver.find_element(By.XPATH, '//a[@data-content="'+data_content+'"]')
+        nav_bar.click()
 
 if __name__ == "__main__":
     website = Scraper("https://www.waterstones.com/")
     website.accept_cookies()
-    website.get_navigation_bar()
+    nav_name = ["NEW","COMING SOON","SPECIAL EDITIONS"]
+    website.get_navigation_bar(nav_name[1])
     pass

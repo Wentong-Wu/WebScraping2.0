@@ -1,1 +1,1 @@
-# WebScraping2.0
+# Web Scraping WaterStones

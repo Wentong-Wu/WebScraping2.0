@@ -3,7 +3,11 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+import json
+import urllib.request
+from pathlib import Path
 import time
+import os
 
 class Scraper:
 
@@ -54,13 +58,53 @@ class Scraper:
     def open_links(self, links):
         for link in links:
             self.driver.get(link)
-        pass
+            self.get_data()
+        
+            # //*[@itemprop="isbn"] - isbn
+            # //*[@itemprop="price"] - price
+            # //*[@itemprop="image"] - image
+            # //*[@itemprop="numberOfPages"] - number of pages
+            # //*[@itemprop="publisher"] - publisher
+            # //*[@itemprop="name"] - title name
+            # //*[@class="breadcrumbs span12"] - list of book genres
+            # //*[@id="scope_book_author"] - book author
+    
+    def get_data(self) -> dict:
+        single_data = {}
+        single_data["Title"]=(self.driver.find_element(By.XPATH,'//*[@itemprop="name"]').text)
+        single_data["Author"]=(self.driver.find_element(By.XPATH,'//*[@itemprop="author"]').text)
+        single_data["Publisher"]=(self.driver.find_element(By.XPATH,'//*[@itemprop="publisher"]').get_attribute("textContent"))
+        single_data["Price"]=(self.driver.find_element(By.XPATH,'//*[@itemprop="price"]').text)
+        single_data["ISBN"]=(self.driver.find_element(By.XPATH,'//*[@itemprop="isbn"]').get_attribute("textContent"))
+        single_data["Image"]=(self.driver.find_element(By.XPATH,'//*[@id="scope_book_image"]').get_attribute("src"))
+        category_list = self.driver.find_elements(By.XPATH,'//*[@class="breadcrumbs span12"]/a')
+        category = []
+        for cate in category_list:
+            category.append(cate.get_attribute("textContent"))
+        single_data["Category"] = category
+        print(single_data.get("ISBN"))
+        print(single_data.get("Image"))
+        self.download_image(single_data.get("ISBN"),single_data.get("Image"))
+        return single_data
+
+    def download_image(self, uniqueID, prod_image):
+        """
+        Download image into a folder
+        """
+        #Save images into images folder
+
+        base = Path('images')
+        base.mkdir(exist_ok=True)
+        opener = urllib.request.URLopener()
+        opener.addheader('User-Agent', 'Mozilla/5.0')
+        filename, headers = opener.retrieve(prod_image,os.path.join(base, ""+uniqueID+".jpg"))
+        
 
 if __name__ == "__main__":
     website = Scraper("https://www.waterstones.com/")
     website.accept_cookies()
     nav_name = ["NEW","COMING SOON","SPECIAL EDITIONS"]
     website.get_navigation_bar(nav_name[1])
-    website.scroll_to_end()
+    #website.scroll_to_end()
     website.open_links(website.get_all_element_links())
     pass

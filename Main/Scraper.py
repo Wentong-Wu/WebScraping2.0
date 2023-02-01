@@ -58,7 +58,12 @@ class Scraper:
     def open_links(self, links):
         for link in links:
             self.driver.get(link)
-            self.get_data()
+            base = Path('raw_data')
+            base.mkdir(exist_ok=True)
+            with open(base/'data.json','w',encoding='utf-8') as f:
+                json.dump(self.get_data,f,ensure_ascii=False,indent=4)
+        
+        # Download data into "raw_data"
         
             # //*[@itemprop="isbn"] - isbn
             # //*[@itemprop="price"] - price
@@ -72,7 +77,10 @@ class Scraper:
     def get_data(self) -> dict:
         single_data = {}
         single_data["Title"]=(self.driver.find_element(By.XPATH,'//*[@itemprop="name"]').text)
-        single_data["Author"]=(self.driver.find_element(By.XPATH,'//*[@itemprop="author"]').text)
+        try:
+            single_data["Author"]=(self.driver.find_element(By.XPATH,'//*[@itemprop="author"]').text)
+        except:
+            single_data["Author"]=(self.driver.find_element(By.XPATH,'//*[@itemprop="name"]').text)
         single_data["Publisher"]=(self.driver.find_element(By.XPATH,'//*[@itemprop="publisher"]').get_attribute("textContent"))
         single_data["Price"]=(self.driver.find_element(By.XPATH,'//*[@itemprop="price"]').text)
         single_data["ISBN"]=(self.driver.find_element(By.XPATH,'//*[@itemprop="isbn"]').get_attribute("textContent"))
@@ -82,9 +90,14 @@ class Scraper:
         for cate in category_list:
             category.append(cate.get_attribute("textContent"))
         single_data["Category"] = category
-        print(single_data.get("ISBN"))
-        print(single_data.get("Image"))
+
+        
+
+        # Download Image into "images" folder
         self.download_image(single_data.get("ISBN"),single_data.get("Image"))
+
+        
+
         return single_data
 
     def download_image(self, uniqueID, prod_image):
@@ -96,8 +109,12 @@ class Scraper:
         base = Path('images')
         base.mkdir(exist_ok=True)
         opener = urllib.request.URLopener()
-        opener.addheader('User-Agent', 'Mozilla/5.0')
-        filename, headers = opener.retrieve(prod_image,os.path.join(base, ""+uniqueID+".jpg"))
+        opener.addheader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+        try:
+            filename, headers = opener.retrieve(prod_image,os.path.join(base, ""+uniqueID+".jpg"))
+        except:
+            prod_image = "https://www.jamesgood.co.uk/sites/default/files/blog_images/waterstones-logo-square.png"
+            filename, headers = opener.retrieve(prod_image,os.path.join(base, ""+uniqueID+".jpg"))
         
 
 if __name__ == "__main__":
@@ -105,6 +122,7 @@ if __name__ == "__main__":
     website.accept_cookies()
     nav_name = ["NEW","COMING SOON","SPECIAL EDITIONS"]
     website.get_navigation_bar(nav_name[1])
-    #website.scroll_to_end()
+    website.scroll_to_end()
+
     website.open_links(website.get_all_element_links())
     pass
